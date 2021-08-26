@@ -1,8 +1,12 @@
 from setuptools import find_packages, setup
 
+with open("README.md", "r") as file:
+    long_description = file.read()
+
 setup(
     name="django-polaris-custodial",
     description="A Django Polaris extension that adds Custodial Wallet support",
+    long_description=long_description,
     version="0.1.0",
     license="Apache license 2.0",
     include_package_data=True,
