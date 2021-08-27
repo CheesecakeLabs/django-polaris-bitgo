@@ -62,11 +62,9 @@ On your `settings.py` file you'll need to add the following configuration variab
   
 - **BITGO_API_KEY**: Refers to the API Key for the BitGo account. It can be generated on your BitGo account by navigating to "Account Settings" -> "Developer Options" -> "Access Tokens". Here, click on the "+" button to add a token. On the following screen, fill in the information about the token that will be created.
   
-   **Note**: Do **NOT** add `Lifetime Spending Limits`, as it'll set a maximum lifetime amount to be transacted through this token and will invalidate it up reaching this limit.
+   **Note**: We recommend to set a high value to `Lifetime Spending Limits` (up to `9223372036854775391` - the max value from Stellar Network) so you won't have to unlock each transaction manually after reaching the limit.
 
     After filling in all the information, your form should look like this:
-
-    ![Token Register Screen](docs/img/token_register_screen.png)
 
     Upon finishing it, you should receive your `API Key`.
 
@@ -177,7 +175,9 @@ With this, you are to go to use your preferred Custodial Wallet as the anchor's 
 
 ### BitGo's API Needs Unlock error
 
-This error generally occurs when a `Lifetime Spending Limits` value was added to the API Key and it reached the limit, invalidating the Key.
+This error indicates the `access token` has reached it's spending limits and needs to be unlock. An unlock is required for protected wallet functions when the access token that you are using does not have any spending limits applied to the token.
+
+We recommend to set a high value (up to `9223372036854775391` - the max value from Stellar Network) so this issue does not affect the integration. For further details see BitGo's official support documentation [here](https://bitgo.freshdesk.com/support/solutions/articles/27000051607-how-to-resolve-error-400-needs-unlock-when-trying-to-send-coins-via-the-api).
 
 ### BitGo's Trustline Error
 
