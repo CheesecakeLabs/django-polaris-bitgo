@@ -87,6 +87,23 @@ BITGO_STELLAR_COIN_CODE = "xlm"
 
 After this you are ready to use BitGo as the supply account for your Anchor on Stellar Network.
 
+#### BitGo's Stellar supported tokens (assets)
+
+Environment | Coin Type | Code | Issuer Website
+--- | --- | --- | ---
+Stellar Testnet	| `txlm:BST-GBQTIOS3XGHB7LVYGBKQVJGCZ3R4JL5E4CBSWJ5ALIJUHBKS6263644L` | **BST** |
+Stellar Mainnet	| `xlm:VELO-GDM4RQUQQUVSKQA7S6EM7XBZP3FCGH4Q7CL6TABQ7B2BEJ5ERARM2M5M` | **VELO** | [velo.org](velo.org)
+Stellar Mainnet	| `xlm:SLT-GCKA6K5PCQ6PNF5RQBF7PQDJWRHO6UOGFMRLK3DYHDOI244V47XKQ4GP` | **SLT** | [smartlands.io](smartlands.io)
+Stellar Mainnet	| `xlm:USD-GDUKMGUGDZQK6YHYA5Z6AY2G4XDSZPSZ3SW5UN3ARVMO6QSRDWP5YLEX` | **USD** | [anchorusd.com](anchorusd.com)
+Stellar Mainnet	| `xlm:ETH-GBVOL67TMUQBGL4TZYNMY3ZQ5WGQYFPFD5VJRWXR72VA33VFNL225PL5` | **ETH** | [stellarport.io](stellarport.io)
+Stellar Mainnet	| `xlm:WXT-GASBLVHS5FOABSDNW5SPPH3QRJYXY5JHA2AOA2QHH2FJLZBRXSG4SWXT` | **WXT** | [wxt.wirexapp.com](wxt.wirexapp.com)
+Stellar Mainnet	| `xlm:USDC-GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN` | **USDC** | [centre.io](centre.io)
+Stellar Mainnet	| `xlm:SIX-GDMS6EECOH6MBMCP3FYRYEVRBIV3TQGLOFQIPVAITBRJUMTI6V7A2X6Z` | **SIX** | [six.network](six.network)
+Stellar Mainnet	| `xlm:ARST-GCSAZVWXZKWS4XS223M5F54H2B6XPIIXZZGP7KEAIU6YSL5HDRGCI3DG` | **ARST** | [anchors.stablex.org](anchors.stablex.org)
+Stellar Mainnet	| `xlm:BRLT-GCHQ3F2BF5P74DMDNOOGHT5DUCKC773AW5DTOFINC26W4KGYFPYDPRSO` | **BRLT** | [anchors.stablex.org](anchors.stablex.org)
+
+You can read more about the supported tokens [here](https://api.bitgo.com/docs/#section/Stellar-Tokens).
+
 ### Other Custodial Wallet
 
 Using this approach you will need to implement a class which inherits from `polaris.integrations.CustodialIntegration` and override three functions:
@@ -170,6 +187,10 @@ class MyAppConfig(AppConfig):
 ```
 
 With this, you are to go to use your preferred Custodial Wallet as the anchor's supply account.
+
+## Asset Model
+
+On Polaris standard flow, when registering  your Asset on the database, its necessary to set the `distribution_seed` with the private key from the distribution account. To ensure that the integration works, you **must not fill `distribution_seed`**, as it would conflict with the implementation.
 
 ## Possible Issues
 
