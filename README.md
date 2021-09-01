@@ -52,15 +52,21 @@ class MyAppConfig(AppConfig):
         register_integrations(
             ...,
             rails=MyRailsIntegration(),
-            custodial=BitGoIntegration(),
+            custodial=BitGoIntegration(
+                api_url="https://app.bitgo-test.com",
+                api_key="myapikey",
+                api_passphrase="myapipassphrase",
+                wallet_id="mywalletid",
+                stellar_coin_code="txlm",
+            ),
         )
 ```
 
-On your `settings.py` file you'll need to add the following configuration variables. For improved security, we strongly recommend to add them to Environment Variables to keep them separated from the code.
+The `BitGoIntegration` class has the following parameters:
 
-- **BITGO_API_URL**: The BitGo's API base URL. Use `https://app.bitgo.com` for the production environment and `https://app.bitgo-test.com` for the test environment.
+- **api_url**: The BitGo's API base URL. Use `https://app.bitgo.com` for the production environment and `https://app.bitgo-test.com` for the test environment.
   
-- **BITGO_API_KEY**: The API Key for the BitGo account. It can be generated on your BitGo account by navigating to "Account Settings" -> "Developer Options" -> "Access Tokens". Here, click on the "+" button to add a token. On the following screen, fill in the information about the token that will be created.
+- **api_key**: The API Key for the BitGo account. It can be generated on your BitGo account by navigating to "Account Settings" -> "Developer Options" -> "Access Tokens". Here, click on the "+" button to add a token. On the following screen, fill in the information about the token that will be created.
   
    **Note**: We recommend to set a high value to `Lifetime Spending Limits` (up to `9223372036854775391` - the max value at the Stellar Network) so you won't have to unlock each transaction manually after reaching the limit.
 
@@ -68,22 +74,13 @@ On your `settings.py` file you'll need to add the following configuration variab
 
     Upon finishing it, you should receive your `API Key`.
 
-- **BITGO_API_PASSPHRASE**: The wallet-specific password to encrypt the user key at BitGo. This password is set when creating the wallet. You can change this password by clicking on "Wallets" -> Access your wallet -> "Settings". There will be a section where you can change the password.
+- **api_passphrase**: The wallet-specific password to encrypt the user key at BitGo. This password is set when creating the wallet. You can change this password by clicking on "Wallets" -> Access your wallet -> "Settings". There will be a section where you can change the password.
   
-- **BITGO_WALLET_ID**: This information can be found by accessing your wallet and going to the "Settings" tab.
+- **wallet_id**: This information can be found by accessing your wallet and going to the "Settings" tab.
   
-- **BITGO_STELLAR_COIN_CODE**: Use `xlm` for the production environment and `txlm` for the test environment.
+- **stellar_coin_code**: Use `xlm` for the production environment and `txlm` for the test environment.
 
-```python
-# settings.py
-...
-
-BITGO_API_URL = "https://app.bitgo-test.com"
-BITGO_API_KEY = "my_bitgo_api_key"
-BITGO_API_PASSPHRASE = "my_bitgo_api_passphrase"
-BITGO_WALLET_ID = "my_wallet_id"
-BITGO_STELLAR_COIN_CODE = "xlm"
-```
+**Note**: For improved security, we strongly recommend to add them to **Environment Variables** to keep them separated from the code.
 
 After this you are ready to use BitGo as the supply account for your Anchor on the Stellar Network.
 

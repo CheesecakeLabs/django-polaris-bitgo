@@ -3,19 +3,27 @@ from typing import Optional
 from urllib.parse import urljoin
 
 import requests
-from django.conf import settings
 
 from polaris_bitgo.helpers.exceptions import BitGoAPIError, BitGoKeyInfoNotFound
 from .dtos import Recipient, Wallet
 
 
 class BitGoAPI:
-    def __init__(self, asset_code: str, asset_issuer: Optional[str] = None):
-        self.API_URL = settings.BITGO_API_URL
-        self.API_KEY = settings.BITGO_API_KEY
-        self.API_PASSPHRASE = settings.BITGO_API_PASSPHRASE
-        self.WALLET_ID = settings.BITGO_WALLET_ID
-        self.COIN = self._get_coin(asset_code, asset_issuer)
+    def __init__(
+        self,
+        asset_code: str,
+        asset_issuer: Optional[str] = None,
+        api_key: str = "",
+        api_passphrase: str = "",
+        wallet_id: str = "",
+        api_url: str = "https://app.bitgo-test.com",
+        stellar_coin_code: str = "txlm",
+    ):
+        self.API_URL = api_url
+        self.API_KEY = api_key
+        self.API_PASSPHRASE = api_passphrase
+        self.WALLET_ID = wallet_id
+        self.COIN = self._get_coin(stellar_coin_code, asset_code, asset_issuer)
 
         base_headers = {
             "Content-Type": "application/json",
@@ -26,11 +34,13 @@ class BitGoAPI:
         self.session.headers.update(**base_headers)
 
     @staticmethod
-    def _get_coin(asset_code: str, asset_issuer: Optional[str] = None) -> str:
+    def _get_coin(
+        stellar_coin_code: str, asset_code: str, asset_issuer: Optional[str] = None
+    ) -> str:
         return (
-            f"{settings.BITGO_STELLAR_COIN_CODE}:{asset_code}-{asset_issuer}"
+            f"{stellar_coin_code}:{asset_code}-{asset_issuer}"
             if asset_issuer
-            else settings.BITGO_STELLAR_COIN_CODE
+            else stellar_coin_code
         )
 
     @staticmethod

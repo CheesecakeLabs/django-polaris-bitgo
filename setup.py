@@ -10,7 +10,7 @@ setup(
     version="0.1.0",
     license="Apache license 2.0",
     include_package_data=True,
-    packages=find_packages(),
+    packages=find_packages(exclude=["tests*"]),
     keywords=[
         "stellar",
         "sdf",
