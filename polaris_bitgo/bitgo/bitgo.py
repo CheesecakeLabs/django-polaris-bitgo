@@ -13,8 +13,25 @@ from .utils import SJCL
 
 
 class BitGo:
-    def __init__(self, asset_code: str = "XLM", asset_issuer: Optional[str] = None):
-        self.bitgo_api = BitGoAPI(asset_code=asset_code, asset_issuer=asset_issuer)
+    def __init__(
+        self,
+        asset_code: str = "XLM",
+        asset_issuer: Optional[str] = None,
+        api_key: str = "",
+        api_passphrase: str = "",
+        wallet_id: str = "",
+        api_url: str = "https://app.bitgo-test.com",
+        stellar_coin_code: str = "txlm",
+    ):
+        self.bitgo_api = BitGoAPI(
+            asset_code=asset_code,
+            asset_issuer=asset_issuer,
+            api_url=api_url,
+            api_key=api_key,
+            api_passphrase=api_passphrase,
+            wallet_id=wallet_id,
+            stellar_coin_code=stellar_coin_code,
+        )
         self.asset_code = asset_code
         self.asset_issuer = asset_issuer
 

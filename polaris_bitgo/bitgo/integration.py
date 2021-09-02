@@ -18,22 +18,35 @@ from polaris_bitgo.utils import get_stellar_network_transaction_info
 logger = get_logger(__name__)
 
 
-def _create_integration_from_asset(asset: Asset):
-    return BitGo(asset_code=asset.code, asset_issuer=asset.issuer)
-
-
 class BitGoIntegration(CustodialIntegration):
-    def __init__(self):
-        super().__init__()
+    def __init__(
+        self,
+        api_key: str = "",
+        api_passphrase: str = "",
+        wallet_id: str = "",
+        api_url: str = "https://app.bitgo-test.com",
+        stellar_coin_code: str = "txlm",
+    ):
+
+        assert api_key, "The API Key is required."
+        assert api_passphrase, "The API Passphrase is required."
+        assert wallet_id, "The Wallet ID is required."
+
         self.custodial_enabled = True
 
+        self.api_key = api_key
+        self.api_passphrase = api_passphrase
+        self.wallet_id = wallet_id
+        self.api_url = api_url
+        self.stellar_coin_code = stellar_coin_code
+
     def get_distribution_account(self, asset: Asset) -> str:
-        bitgo = _create_integration_from_asset(asset)
+        bitgo = self._create_integration_from_asset(asset)
 
         return bitgo.get_public_key()
 
     def get_distribution_seed(self, asset: Asset) -> str:
-        bitgo = _create_integration_from_asset(asset)
+        bitgo = self._create_integration_from_asset(asset)
 
         return bitgo.get_private_key()
 
@@ -92,6 +105,20 @@ class BitGoIntegration(CustodialIntegration):
             address=address,
         )
 
+    def _create_integration_from_asset(
+        self,
+        asset: Asset,
+    ) -> BitGo:
+        return BitGo(
+            asset_code=asset.code,
+            asset_issuer=asset.issuer,
+            api_key=self.api_key,
+            api_passphrase=self.api_passphrase,
+            wallet_id=self.wallet_id,
+            api_url=self.api_url,
+            stellar_coin_code=self.stellar_coin_code,
+        )
+
     def create_destination_account(
         self, transaction: Transaction
     ) -> Tuple[Account, bool]:
@@ -110,7 +137,7 @@ class BitGoIntegration(CustodialIntegration):
             amount=polaris_settings.ACCOUNT_STARTING_BALANCE,
         )
 
-        bitgo = _create_integration_from_asset(Asset(code="XLM", issuer=None))
+        bitgo = self._create_integration_from_asset(Asset(code="XLM", issuer=None))
 
         envelope = bitgo.build_transaction(recipient)
         signed_envelope = bitgo.sign_transaction(envelope)
@@ -130,7 +157,7 @@ class BitGoIntegration(CustodialIntegration):
         :returns: Returns the transaction's information at Stellar
         Network.
         """
-        bitgo = _create_integration_from_asset(transaction.asset)
+        bitgo = self._create_integration_from_asset(transaction.asset)
 
         amount = round(
             Decimal(transaction.amount_in) - Decimal(transaction.amount_fee),
