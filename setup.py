@@ -4,8 +4,8 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 setup(
-    name="django-polaris-custodial",
-    description="A Django Polaris extension that adds Custodial Wallet support",
+    name="django-polaris-bitgo",
+    description="A Django Polaris extension that adds BitGo's Custodial Wallet support",
     long_description=long_description,
     version="0.1.0",
     license="Apache license 2.0",
@@ -21,6 +21,7 @@ setup(
         "sep24",
         "sep-31",
         "sep31",
+        "bitgo",
         "custodial",
         "wallet",
     ],
