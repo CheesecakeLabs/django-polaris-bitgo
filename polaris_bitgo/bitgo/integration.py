@@ -1,13 +1,12 @@
 from time import sleep
 from decimal import Decimal
-from typing import Tuple, Union
+from typing import Union
 
 from polaris import settings as polaris_settings
-from polaris.integrations import CustodialIntegration
+from polaris.integrations import CustodyIntegration
 from polaris.models import Asset, Transaction
-from polaris.utils import get_account_obj, get_logger
-from stellar_sdk import Keypair
-from stellar_sdk.account import Account
+from polaris.utils import get_logger
+from rest_framework.request import Request
 from stellar_sdk.exceptions import NotFoundError
 from stellar_sdk.operation import Operation
 
@@ -18,7 +17,7 @@ from polaris_bitgo.utils import get_stellar_network_transaction_info
 logger = get_logger(__name__)
 
 
-class BitGoIntegration(CustodialIntegration):
+class BitGoIntegration(CustodyIntegration):
     def __init__(
         self,
         api_key: str = "",
@@ -32,7 +31,7 @@ class BitGoIntegration(CustodialIntegration):
         assert api_passphrase, "The API Passphrase is required."
         assert wallet_id, "The Wallet ID is required."
 
-        self.custodial_enabled = True
+        super().__init__()
 
         self.api_key = api_key
         self.api_passphrase = api_passphrase
@@ -41,87 +40,23 @@ class BitGoIntegration(CustodialIntegration):
         self.stellar_coin_code = stellar_coin_code
 
     def get_distribution_account(self, asset: Asset) -> str:
+        """
+        Return the Stellar account used to receive payments of `asset`. This
+        method is a replacement for the ``Asset.distribution_account`` property
+        which is derived from the ``Asset.distribution_seed`` database column.
+
+        :param asset: the asset sent in payments to the returned Stellar account
+        """
         bitgo = self._create_integration_from_asset(asset)
 
         return bitgo.get_public_key()
 
-    def get_distribution_seed(self, asset: Asset) -> str:
-        bitgo = self._create_integration_from_asset(asset)
+    def save_receiving_account_and_memo(
+        self, request: Request, transaction: Transaction
+    ):
+        pass
 
-        return bitgo.get_private_key()
-
-    @staticmethod
-    def _poll_stellar_transaction_information(txid: str) -> dict:
-        """
-        Pooling the stellar network to get the transaction information.
-        This method is used to retrieve the "envelope_xdr" and "paging_token"
-        since BitGo doesn't return these values
-
-        :param txid: The Stellar Network transaction id.
-        :returns: Returns the transaction's information.
-        """
-        timeout_count = 0
-        max_timeout = 10
-        while timeout_count > max_timeout:
-            try:
-                return get_stellar_network_transaction_info(txid)
-            except NotFoundError:
-                sleep(1)
-                timeout_count += 1
-                pass
-
-    @staticmethod
-    def _poll_stellar_destination_account(public_key: str) -> Tuple[Account, bool]:
-        """
-        Pooling the stellar network to get the destination account information
-        and verify if it exists at the Stellar Network.
-
-        :param public_key: The destination account public key.
-        :returns: Returns a tuple with the :class:`Account` object based on
-        the destination public key and a `True` value.
-        """
-        timeout_count = 0
-        max_timeout = 10
-        while timeout_count > max_timeout:
-            try:
-                account, _ = get_account_obj(Keypair.from_public_key(public_key))
-                return account, True
-            except NotFoundError:
-                sleep(1)
-                timeout_count += 1
-                pass
-
-    @staticmethod
-    def _create_recipient(address: str, amount: Union[Decimal, str]) -> Recipient:
-        """
-        Creates :class:`Recipient` instance.
-
-        :param address: The destination account public key.
-        :param amount: The transaction's amount.
-        :returns: Returns a :class:`Recipient` instance.
-        """
-        return Recipient(
-            amount=str(Operation.to_xdr_amount(amount)),
-            address=address,
-        )
-
-    def _create_integration_from_asset(
-        self,
-        asset: Asset,
-    ) -> BitGo:
-        return BitGo(
-            asset_code=asset.code,
-            asset_issuer=asset.issuer,
-            api_key=self.api_key,
-            api_passphrase=self.api_passphrase,
-            wallet_id=self.wallet_id,
-            api_url=self.api_url,
-            stellar_coin_code=self.stellar_coin_code,
-        )
-
-    def create_destination_account(
-        self, transaction: Transaction
-    ) -> Tuple[Account, bool]:
+    def create_destination_account(self, transaction: Transaction) -> dict:
         """
         Creates the destination account of the transaction.
         All Stellar's accounts only exist after receiving an
@@ -147,9 +82,11 @@ class BitGoIntegration(CustodialIntegration):
         if not response:
             raise Exception("Error in BitGo send transaction")
 
-        return self._poll_stellar_destination_account(transaction.stellar_account)
+        return self._poll_stellar_transaction_information(txid=response["txid"])
 
-    def submit_transaction(self, transaction: Transaction) -> dict:
+    def submit_deposit_transaction(
+        self, transaction: Transaction, has_trustline: bool = True
+    ) -> dict:
         """
         Sends the transaction to BitGo.
 
@@ -178,3 +115,57 @@ class BitGoIntegration(CustodialIntegration):
             raise Exception("Error in BitGo send transaction")
 
         return self._poll_stellar_transaction_information(txid=response["txid"])
+
+    @staticmethod
+    def _poll_stellar_transaction_information(txid: str) -> dict:
+        """
+        Pooling the stellar network to get the transaction information.
+        This method is used to retrieve the "envelope_xdr" and "paging_token"
+        since BitGo doesn't return these values
+
+        :param txid: The Stellar Network transaction id.
+        :returns: Returns the transaction's information.
+        """
+        timeout_count = 0
+        max_timeout = 10
+        while timeout_count > max_timeout:
+            try:
+                return get_stellar_network_transaction_info(txid)
+            except NotFoundError:
+                sleep(1)
+                timeout_count += 1
+                pass
+
+    @staticmethod
+    def _create_recipient(address: str, amount: Union[Decimal, str]) -> Recipient:
+        """
+        Creates :class:`Recipient` instance.
+
+        :param address: The destination account public key.
+        :param amount: The transaction's amount.
+        :returns: Returns a :class:`Recipient` instance.
+        """
+        return Recipient(
+            amount=str(Operation.to_xdr_amount(amount)),
+            address=address,
+        )
+
+    def _create_integration_from_asset(
+        self,
+        asset: Asset,
+    ) -> BitGo:
+        """
+        Creates :class:`BitGo` instance.
+
+        :param asset: the asset sent in payments.
+        :returns: Returns a :class:`BitGo` instance.
+        """
+        return BitGo(
+            asset_code=asset.code,
+            asset_issuer=asset.issuer,
+            api_key=self.api_key,
+            api_passphrase=self.api_passphrase,
+            wallet_id=self.wallet_id,
+            api_url=self.api_url,
+            stellar_coin_code=self.stellar_coin_code,
+        )
