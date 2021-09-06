@@ -12,6 +12,7 @@ from stellar_sdk.operation import Operation
 
 from . import BitGo
 from .bitgo import Recipient
+from polaris_bitgo.helpers.exceptions import BitGoAPIError
 from polaris_bitgo.utils import get_stellar_network_transaction_info
 
 logger = get_logger(__name__)
@@ -80,7 +81,7 @@ class BitGoIntegration(CustodyIntegration):
         response = bitgo.send_transaction(signed_envelope.to_xdr())
 
         if not response:
-            raise Exception("Error in BitGo send transaction")
+            raise BitGoAPIError("Error in BitGo send transaction")
 
         return self._poll_stellar_transaction_information(txid=response["txid"])
 
@@ -112,7 +113,7 @@ class BitGoIntegration(CustodyIntegration):
         response = bitgo.send_transaction(signed_envelope.to_xdr())
 
         if not response:
-            raise Exception("Error in BitGo send transaction")
+            raise BitGoAPIError("Error in BitGo send transaction")
 
         return self._poll_stellar_transaction_information(txid=response["txid"])
 
