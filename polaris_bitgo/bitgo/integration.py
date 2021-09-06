@@ -26,11 +26,15 @@ class BitGoIntegration(CustodyIntegration):
         wallet_id: str = "",
         api_url: str = "https://app.bitgo-test.com",
         stellar_coin_code: str = "txlm",
+        num_retries: int = 5,
     ):
 
-        assert api_key, "The API Key is required."
-        assert api_passphrase, "The API Passphrase is required."
-        assert wallet_id, "The Wallet ID is required."
+        if not api_key:
+            raise ValueError("The API Key is required.")
+        if not api_passphrase:
+            raise ValueError("The API Passphrase is required.")
+        if not wallet_id:
+            raise ValueError("The Wallet ID is required.")
 
         super().__init__()
 
@@ -39,6 +43,7 @@ class BitGoIntegration(CustodyIntegration):
         self.wallet_id = wallet_id
         self.api_url = api_url
         self.stellar_coin_code = stellar_coin_code
+        self.num_retries = num_retries
 
     def get_distribution_account(self, asset: Asset) -> str:
         """
@@ -117,8 +122,7 @@ class BitGoIntegration(CustodyIntegration):
 
         return self._poll_stellar_transaction_information(txid=response["txid"])
 
-    @staticmethod
-    def _poll_stellar_transaction_information(txid: str) -> dict:
+    def _poll_stellar_transaction_information(self, txid: str) -> dict:
         """
         Pooling the stellar network to get the transaction information.
         This method is used to retrieve the "envelope_xdr" and "paging_token"
@@ -127,15 +131,14 @@ class BitGoIntegration(CustodyIntegration):
         :param txid: The Stellar Network transaction id.
         :returns: Returns the transaction's information.
         """
-        timeout_count = 0
-        max_timeout = 10
-        while timeout_count > max_timeout:
-            try:
-                return get_stellar_network_transaction_info(txid)
-            except NotFoundError:
-                sleep(1)
-                timeout_count += 1
-                pass
+        try:
+            return get_stellar_network_transaction_info(
+                txid, num_retries=self.num_retries
+            )
+        except NotFoundError:
+            raise RuntimeError(
+                f"Error trying to retrieve transaction information. Transaction id: {txid}"
+            )
 
     @staticmethod
     def _create_recipient(address: str, amount: Union[Decimal, str]) -> Recipient:
