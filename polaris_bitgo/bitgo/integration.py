@@ -88,7 +88,9 @@ class BitGoIntegration(CustodyIntegration):
         transaction.receiving_anchor_account = bitgo.get_public_key()
         transaction.memo = memo_hex_to_base64(padded_hex_memo)
         transaction.memo_type = Transaction.MEMO_TYPES.hash
-        transaction.save()
+        transaction.save(
+            update_fields=["receiving_anchor_account", "memo", "memo_type"]
+        )
 
     def create_destination_account(self, transaction: Transaction) -> dict:
         """
