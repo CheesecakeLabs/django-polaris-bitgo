@@ -68,7 +68,7 @@ class BitGoIntegration(CustodyIntegration):
         the destination account's public key and a `True` value.
         """
         recipient = self._create_recipient(
-            address=transaction.stellar_account,
+            address=transaction.to_address,
             amount=polaris_settings.ACCOUNT_STARTING_BALANCE,
         )
 
