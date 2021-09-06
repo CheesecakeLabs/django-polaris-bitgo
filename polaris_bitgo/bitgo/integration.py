@@ -205,3 +205,19 @@ class BitGoIntegration(CustodyIntegration):
             api_url=self.api_url,
             stellar_coin_code=self.stellar_coin_code,
         )
+
+    @property
+    def claimable_balances_supported(self) -> bool:
+        """
+        Return ``True`` if the custody service provider supports sending deposit
+        payments in the form of claimable balances, ``False`` otherwise.
+        """
+        return False
+
+    @property
+    def account_creation_supported(self) -> bool:
+        """
+        Return ``True`` if the custody service provider supports funding Stellar
+        accounts not custodied by the provider, ``False`` otherwise.
+        """
+        return True
