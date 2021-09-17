@@ -5,7 +5,7 @@ from typing import Union
 from polaris import settings as polaris_settings
 from polaris.integrations import CustodyIntegration
 from polaris.models import Asset, Transaction
-from polaris.utils import get_logger
+from polaris.utils import get_logger, memo_hex_to_base64
 from rest_framework.request import Request
 from stellar_sdk.exceptions import NotFoundError
 from stellar_sdk.operation import Operation
@@ -60,7 +60,41 @@ class BitGoIntegration(CustodyIntegration):
     def save_receiving_account_and_memo(
         self, request: Request, transaction: Transaction
     ):
-        pass
+        """
+        Save the Stellar account that the client should use as the destination
+        of the payment transaction to ``Transaction.receiving_anchor_account``,
+        the string representation of the memo the client should attach to the
+        transaction to ``Transaction.memo``, and the type of that memo to
+        ``Transaction.memo_type``.
+
+        This method is only called once for a given transaction. The values
+        saved will be returned to the client in the response to this request or
+        in future ``GET /transaction`` responses.
+
+        **Polaris assumes ``Transaction.save()`` is called within this method.**
+
+        The memo saved to the transaction object _must_ be unique to the
+        transaction, since the anchor is expected to match the database record
+        represented by `transaction` with the on-chain transaction submitted.
+
+        This function differs from ``get_distribution_account()`` by allowing the
+        anchor to return any Stellar account that can be used to receive a payment.
+        This is ideal when the account used is determined by a custody service
+        provider that does not guarantee that the account provided will be the
+        account provided for future transactions.
+
+        :param request: the request that initiated the call to this function
+        :param transaction: the transaction a Stellar account and memo must be
+            saved to
+        """
+        padded_hex_memo = "0" * (64 - len(transaction.id.hex)) + transaction.id.hex
+
+        bitgo = self._create_integration_from_asset(transaction.asset)
+
+        transaction.receiving_anchor_account = bitgo.get_public_key()
+        transaction.memo = memo_hex_to_base64(padded_hex_memo)
+        transaction.memo_type = Transaction.MEMO_TYPES.hash
+        transaction.save()
 
     def create_destination_account(self, transaction: Transaction) -> dict:
         """
@@ -173,3 +207,19 @@ class BitGoIntegration(CustodyIntegration):
             api_url=self.api_url,
             stellar_coin_code=self.stellar_coin_code,
         )
+
+    @property
+    def claimable_balances_supported(self) -> bool:
+        """
+        Return ``True`` if the custody service provider supports sending deposit
+        payments in the form of claimable balances, ``False`` otherwise.
+        """
+        return False
+
+    @property
+    def account_creation_supported(self) -> bool:
+        """
+        Return ``True`` if the custody service provider supports funding Stellar
+        accounts not custodied by the provider, ``False`` otherwise.
+        """
+        return True
