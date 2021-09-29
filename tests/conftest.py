@@ -31,6 +31,7 @@ def pytest_configure(config):
     settings.POLARIS_SIGNING_SEED = Keypair.random().secret
     settings.POLARIS_SERVER_JWT_KEY = "arandomkeythatissecret"
     settings.POLARIS_HOST_URL = "https://example.com/"
+    settings.SESSION_COOKIE_SECURE = True
 
     # BitGo specific
     settings.BITGO_API_URL = "https://api.bitgo-test.com"
