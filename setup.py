@@ -1,14 +1,29 @@
+import os.path
+
+import codecs
 from setuptools import find_packages, setup
 
-with open("README.md", "r") as file:
-    long_description = file.read()
+
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), "r") as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith("__version__"):
+            delimiter = '"' if '"' in line else "'"
+            return line.split(delimiter)[1]
+    raise RuntimeError("Unable to find version string.")
+
 
 setup(
     name="django-polaris-bitgo",
     description="A Django Polaris extension that adds BitGo's Custodial Wallet support",
-    long_description=long_description,
-    version="0.1.0",
-    license="Apache license 2.0",
+    long_description=read("README.md"),
+    version=get_version("polaris_bitgo/__init__.py"),
+    license="Apache License 2.0",
     include_package_data=True,
     packages=find_packages(exclude=["tests*"]),
     keywords=[
