@@ -32,7 +32,7 @@ INSTALLED_APPS = [
 
 ### BitGo
 
-To use the BitGo's wallet, it is necessary to import `BitGoIntegration` class from `polaris_bitgo.bitgo.integration` package and pass it as the `custody` parameter to Polaris' `register_integrations` function.
+To use the BitGo's wallet, it is necessary to import `BitGoIntegration` class from `polaris_bitgo.bitgo.integration` package and pass an instance of it as the `custody` parameter to Polaris' `register_integrations` function.
 
 ```python
 # apps.py
