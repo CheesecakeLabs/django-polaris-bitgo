@@ -14,6 +14,8 @@ $ pip install django-polaris-bitgo
 ```
 
 ```python
+# settings.py
+
 INSTALLED_APPS = [
     ...
     # polaris dependencies
@@ -30,7 +32,7 @@ INSTALLED_APPS = [
 
 ### BitGo
 
-To use the BitGo's wallet, it is necessary to import `BitGoIntegration` class from `polaris_bitgo.bitgo` package and pass it as an argument to the `custodial` parameter in the Polaris' `register_integrations` function.
+To use the BitGo's wallet, it is necessary to import `BitGoIntegration` class from `polaris_bitgo.bitgo.integration` package and pass an instance of it as the `custody` parameter to Polaris' `register_integrations` function.
 
 ```python
 # apps.py
@@ -43,7 +45,7 @@ class MyAppConfig(AppConfig):
 
     def ready(self):
         from polaris.integrations import register_integrations
-        from polaris_custodial.bitgo import BitGoIntegration
+        from polaris_custodial.bitgo.integration import BitGoIntegration
         from .integrations import (
             ...
             MyRailsIntegration,
@@ -52,7 +54,7 @@ class MyAppConfig(AppConfig):
         register_integrations(
             ...,
             rails=MyRailsIntegration(),
-            custodial=BitGoIntegration(
+            custody=BitGoIntegration(
                 api_url="https://app.bitgo-test.com",
                 api_key="myapikey",
                 api_passphrase="myapipassphrase",
