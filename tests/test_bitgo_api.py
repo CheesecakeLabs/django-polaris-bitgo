@@ -2,44 +2,40 @@ import dataclasses
 from urllib.parse import urljoin
 
 import pytest
+from rest_framework import status
 from stellar_sdk.transaction_envelope import TransactionEnvelope
 
-from polaris_bitgo.bitgo.api import BitGoAPI
-from polaris_bitgo.bitgo.dtos import Recipient, Wallet
-from polaris_bitgo.helpers.exceptions import BitGoKeyInfoNotFound
+from polaris_bitgo.bitgo.dtos import Wallet
+from polaris_bitgo.helpers.exceptions import BitGoAPIError, BitGoKeyInfoNotFound
 from .mocks import bitgo as bitgo_mocks
 
+REQUEST_METHOD_GET_MOCK = "requests.Session.get"
+REQUEST_METHOD_POST_MOCK = "requests.Session.post"
 
-# TODO: Move BitGoAPI instantiations to a pytest fixture
-def test_get_wallet_success(mocker):
-    bitgo = BitGoAPI(
-        asset_code="BST",
-        asset_issuer="GBQTIOS3XGHB7LVYGBKQVJGCZ3R4JL5E4CBSWJ5ALIJUHBKS6263644L",
-    )
-    wallet_id = bitgo.WALLET_ID
+
+def test_get_wallet_success(mocker, make_bitgo_api):
+    bitgo_api = make_bitgo_api()
+    wallet_id = bitgo_api.WALLET_ID
 
     bitgo_request_mock = mocker.patch(
-        "requests.Session.get",
+        REQUEST_METHOD_GET_MOCK,
         return_value=bitgo_mocks.get_wallet_response(wallet_id=wallet_id),
     )
 
     expected_value = bitgo_mocks.get_wallet_data(wallet_id=wallet_id)
 
-    bitgo.get_wallet()
+    bitgo_api.get_wallet()
 
     bitgo_request_mock.assert_called_once_with(
-        urljoin(bitgo.API_URL, f"/api/v2/{bitgo.COIN}/wallet/{wallet_id}"),
+        urljoin(bitgo_api.API_URL, f"/api/v2/{bitgo_api.COIN}/wallet/{wallet_id}"),
     )
 
     assert bitgo_request_mock.return_value.json() == expected_value
 
 
-def test_get_wallet_key_info_success(mocker):
-    bitgo = BitGoAPI(
-        asset_code="BST",
-        asset_issuer="GBQTIOS3XGHB7LVYGBKQVJGCZ3R4JL5E4CBSWJ5ALIJUHBKS6263644L",
-    )
-    wallet_id = bitgo.WALLET_ID
+def test_get_wallet_key_info_success(mocker, make_bitgo_api):
+    bitgo_api = make_bitgo_api()
+    wallet_id = bitgo_api.WALLET_ID
 
     wallet_data_mock = bitgo_mocks.get_wallet_data(wallet_id=wallet_id)
     wallet = Wallet(
@@ -48,15 +44,15 @@ def test_get_wallet_key_info_success(mocker):
     )
 
     bitgo_key_info_request_mock = mocker.patch(
-        "requests.Session.get", return_value=bitgo_mocks.get_wallet_key_info_response()
+        REQUEST_METHOD_GET_MOCK, return_value=bitgo_mocks.get_wallet_key_info_response()
     )
 
     expected_value = bitgo_mocks.get_wallet_key_info_data()
 
-    key_info = bitgo.get_wallet_key_info(wallet)
+    key_info = bitgo_api.get_wallet_key_info(wallet)
 
     bitgo_key_info_request_mock.assert_called_once_with(
-        urljoin(bitgo.API_URL, f"/api/v2/{bitgo.COIN}/key"),
+        urljoin(bitgo_api.API_URL, f"/api/v2/{bitgo_api.COIN}/key"),
     )
 
     assert bitgo_key_info_request_mock.return_value.json() == expected_value
@@ -69,77 +65,66 @@ def test_get_wallet_key_info_success(mocker):
     }
 
 
-def test_get_wallet_key_info_not_found(mocker):
-    bitgo = BitGoAPI(
-        asset_code="BST",
-        asset_issuer="GBQTIOS3XGHB7LVYGBKQVJGCZ3R4JL5E4CBSWJ5ALIJUHBKS6263644L",
-    )
-    wallet_id = bitgo.WALLET_ID
+def test_get_wallet_key_info_not_found(mocker, make_bitgo_api, make_wallet):
+    bitgo_api = make_bitgo_api()
+    wallet_id = bitgo_api.WALLET_ID
 
     wallet_data_mock = bitgo_mocks.get_wallet_data(
         wallet_id=wallet_id, keys=["key1", "key2", "key3"]
     )
-    wallet = Wallet(
-        public_key=wallet_data_mock.get("coinSpecific", {}).get("rootAddress"),
-        keys=wallet_data_mock.get("keys", []),
+    wallet = make_wallet(
+        wallet_data_mock.get("coinSpecific", {}).get("rootAddress"),
+        wallet_data_mock.get("keys", []),
     )
 
     mocker.patch(
-        "requests.Session.get", return_value=bitgo_mocks.get_wallet_key_info_response()
+        REQUEST_METHOD_GET_MOCK, return_value=bitgo_mocks.get_wallet_key_info_response()
     )
 
     with pytest.raises(BitGoKeyInfoNotFound):
-        bitgo.get_wallet_key_info(wallet)
+        bitgo_api.get_wallet_key_info(wallet)
 
 
-def test_build_transaction_success(mocker):
+def test_build_transaction_success(mocker, make_bitgo_api, make_recipient):
     bitgo_request_mock = mocker.patch(
-        "requests.Session.post", return_value=bitgo_mocks.build_transaction_response()
+        REQUEST_METHOD_POST_MOCK, return_value=bitgo_mocks.build_transaction_response()
     )
 
-    bitgo = BitGoAPI(
-        asset_code="BST",
-        asset_issuer="GBQTIOS3XGHB7LVYGBKQVJGCZ3R4JL5E4CBSWJ5ALIJUHBKS6263644L",
-    )
+    bitgo_api = make_bitgo_api()
+    recipient = make_recipient()
 
-    amount = "10000"
-    address = "GB4S2NHN7DIQVDTZY3QIUNDFV5LZNOO6FS5PO2NOCQ3MBJCVUIBFTJH3"
-
-    recipient = Recipient(amount=amount, address=address)
-
-    response = bitgo.build_transaction(recipient)
+    response_data = bitgo_api.build_transaction(recipient)
 
     bitgo_request_mock.assert_called_once_with(
         urljoin(
-            bitgo.API_URL, f"/api/v2/{bitgo.COIN}/wallet/{bitgo.WALLET_ID}/tx/build"
+            bitgo_api.API_URL,
+            f"/api/v2/{bitgo_api.COIN}/wallet/{bitgo_api.WALLET_ID}/tx/build",
         ),
         json={"recipients": [dataclasses.asdict(recipient)]},
     )
 
-    assert response == bitgo_request_mock.return_value.json()
+    assert response_data == bitgo_request_mock.return_value.json()
 
 
-def test_send_transaction_success(mocker):
+def test_send_transaction_success(mocker, make_bitgo_api):
     bitgo_build_response = bitgo_mocks.build_transaction_data()
 
     bitgo_request_mock = mocker.patch(
-        "requests.Session.post", return_value=bitgo_mocks.send_transaction_response()
+        REQUEST_METHOD_POST_MOCK, return_value=bitgo_mocks.send_transaction_response()
     )
 
-    bitgo = BitGoAPI(
-        asset_code="BST",
-        asset_issuer="GBQTIOS3XGHB7LVYGBKQVJGCZ3R4JL5E4CBSWJ5ALIJUHBKS6263644L",
-    )
+    bitgo_api = make_bitgo_api()
 
     transaction_envelope = TransactionEnvelope.from_xdr(
         bitgo_build_response["txBase64"], "Test SDF Network ; September 2015"
     )
 
-    transaction_response = bitgo.send_transaction(transaction_envelope.to_xdr())
+    transaction_response = bitgo_api.send_transaction(transaction_envelope.to_xdr())
 
     bitgo_request_mock.assert_called_once_with(
         urljoin(
-            bitgo.API_URL, f"/api/v2/{bitgo.COIN}/wallet/{bitgo.WALLET_ID}/tx/send"
+            bitgo_api.API_URL,
+            f"/api/v2/{bitgo_api.COIN}/wallet/{bitgo_api.WALLET_ID}/tx/send",
         ),
         json={
             "halfSigned": {
@@ -149,3 +134,58 @@ def test_send_transaction_success(mocker):
     )
 
     assert transaction_response == bitgo_request_mock.return_value.json()
+
+
+def test_get_transfer_by_id_success(mocker, make_bitgo_api):
+    transaction_id = "615da283c6d7cb000686dacbdfdca0ec"
+    bitgo_api = make_bitgo_api()
+
+    bitgo_request_mock = mocker.patch(
+        REQUEST_METHOD_GET_MOCK,
+        return_value=bitgo_mocks.get_transaction_by_id_response(
+            transaction_id=transaction_id, wallet_id=bitgo_api.WALLET_ID
+        ),
+    )
+
+    response_data = bitgo_api.get_transfer_by_id(transaction_id)
+
+    bitgo_request_mock.assert_called_once_with(
+        urljoin(
+            bitgo_api.API_URL,
+            f"/api/v2/{bitgo_api.COIN}/wallet/{bitgo_api.WALLET_ID}/transfer/{transaction_id}",
+        ),
+    )
+
+    assert response_data == bitgo_request_mock.return_value.json()
+    assert response_data["id"] == transaction_id
+    assert response_data["tags"] == [bitgo_api.WALLET_ID]
+
+
+def test_get_transfer_by_id_bad_request(mocker, make_bitgo_api):
+    transaction_id = "615da283c6d7cb000686dacbdfdca0ec"
+
+    bitgo_api = make_bitgo_api()
+
+    url = urljoin(
+        bitgo_api.API_URL,
+        f"/api/v2/{bitgo_api.COIN}/wallet/{bitgo_api.WALLET_ID}/transfer/{transaction_id}",
+    )
+
+    bitgo_request_mock = mocker.patch(
+        REQUEST_METHOD_GET_MOCK,
+        return_value=bitgo_mocks.get_transaction_by_id_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            url=url,
+            reason="Bad Request",
+            transaction_id=transaction_id,
+            wallet_id=bitgo_api.WALLET_ID,
+        ),
+    )
+
+    with pytest.raises(
+        BitGoAPIError,
+        match=f"400 Error: Bad Request for url {url}. Response Text: ",
+    ):
+        bitgo_api.get_transfer_by_id(transaction_id)
+
+    bitgo_request_mock.assert_called_once_with(url)

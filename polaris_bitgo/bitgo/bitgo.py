@@ -11,6 +11,9 @@ from .api import BitGoAPI
 from .dtos import Recipient, Wallet
 from .utils import SJCL
 
+CONFIRMED_STATUS = "confirmed"
+FAILED_STATUS = "failed"
+
 
 class BitGo:
     def __init__(
@@ -70,7 +73,7 @@ class BitGo:
         going to be signed by the Anchor's BitGo wallet.
         :return: Returns the received TransactionEnvelope signed.
         """
-        keypair = Keypair.from_secret(self.get_private_key())
+        keypair = Keypair.from_secret(self._decrypt_private_key())
         transaction_envelope.sign(keypair)
 
         return transaction_envelope
@@ -126,12 +129,17 @@ class BitGo:
         """
         return self.wallet.public_key
 
-    def get_private_key(self) -> str:
+    def get_stellar_transaction_id(self, transaction_id: str) -> str:
         """
-        Returns the private key from a signer, in this case, the user key.
-        It doesn't return the private key from the account that has the
-        supplies.
+        Gets the Stellar Network's transaction id.
 
-        :return: Returns the signer private key hash.
+        :param: The BitGo's transfer id.
+        :return: Returns a string containing the Stellar Network transaction id.
         """
-        return self._decrypt_private_key()
+        while True:
+            response_data = self.bitgo_api.get_transfer_by_id(transaction_id)
+            if response_data.get("state") == FAILED_STATUS:
+                raise RuntimeError("BitGo failed to complete the transfer.")
+            if response_data.get("state") == CONFIRMED_STATUS:
+                break
+        return response_data.get("txid")
