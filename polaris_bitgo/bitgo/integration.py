@@ -122,9 +122,8 @@ class BitGoIntegration(CustodyIntegration):
         if not response:
             raise BitGoAPIError("Error in BitGo send transaction")
 
-        return self._poll_stellar_transaction_information(
-            transaction_id=response["id"], bitgo=bitgo
-        )
+        stellar_transaction_id = bitgo.get_stellar_transaction_id(response["id"])
+        return self._poll_stellar_transaction_information(stellar_transaction_id)
 
     def submit_deposit_transaction(
         self, transaction: Transaction, has_trustline: bool = True
@@ -156,22 +155,20 @@ class BitGoIntegration(CustodyIntegration):
         if not response:
             raise BitGoAPIError("Error in BitGo send transaction")
 
-        return self._poll_stellar_transaction_information(
-            transaction_id=response["id"], bitgo=bitgo
-        )
+        stellar_transaction_id = bitgo.get_stellar_transaction_id(response["id"])
+        return self._poll_stellar_transaction_information(stellar_transaction_id)
 
     def _poll_stellar_transaction_information(
-        self, transaction_id: str, bitgo: BitGo
+        self, stellar_transaction_id: str
     ) -> dict:
         """
         Pooling the stellar network to get the transaction information.
         This method is used to retrieve the "envelope_xdr" and "paging_token"
         since BitGo doesn't return these values
 
-        :param transaction_id: The BitGo transaction id.
+        :param stellar_transaction_id: The Stellar Network's transaction id.
         :returns: Returns the transaction's information.
         """
-        stellar_transaction_id = bitgo.get_stellar_transaction_id(transaction_id)
         try:
             return get_stellar_network_transaction_info(
                 stellar_transaction_id, num_retries=self.num_retries
