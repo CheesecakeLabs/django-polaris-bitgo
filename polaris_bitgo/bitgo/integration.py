@@ -103,7 +103,7 @@ class BitGoIntegration(CustodyIntegration):
         amount of XLM on its balance.
         Read more at: https://developers.stellar.org/docs/glossary/accounts/#account-creation
 
-        :param public_key: The destination account public key.
+        :param transaction: A :class:`Transaction` instance containing all the transaction information.
         :returns: Returns a tuple with the :class:`Account` object based on
         the destination account's public key and a `True` value.
         """
@@ -132,6 +132,8 @@ class BitGoIntegration(CustodyIntegration):
         Sends the transaction to BitGo.
 
         :param transaction: The transaction model instance
+        :param has_trustline: whether or not the destination
+        account has a trustline for the requested asset
         :returns: Returns the transaction's information at Stellar
         Network.
         """
