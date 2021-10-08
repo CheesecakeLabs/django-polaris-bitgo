@@ -103,7 +103,7 @@ class BitGoIntegration(CustodyIntegration):
         amount of XLM on its balance.
         Read more at: https://developers.stellar.org/docs/glossary/accounts/#account-creation
 
-        :param public_key: The destination account public key.
+        :param transaction: A :class:`Transaction` instance containing all the transaction information.
         :returns: Returns a tuple with the :class:`Account` object based on
         the destination account's public key and a `True` value.
         """
@@ -122,7 +122,8 @@ class BitGoIntegration(CustodyIntegration):
         if not response:
             raise BitGoAPIError("Error in BitGo send transaction")
 
-        return self._poll_stellar_transaction_information(txid=response["txid"])
+        stellar_transaction_id = bitgo.get_stellar_transaction_id(response["id"])
+        return self._poll_stellar_transaction_information(stellar_transaction_id)
 
     def submit_deposit_transaction(
         self, transaction: Transaction, has_trustline: bool = True
@@ -131,6 +132,8 @@ class BitGoIntegration(CustodyIntegration):
         Sends the transaction to BitGo.
 
         :param transaction: The transaction model instance
+        :param has_trustline: whether or not the destination
+        account has a trustline for the requested asset
         :returns: Returns the transaction's information at Stellar
         Network.
         """
@@ -154,24 +157,27 @@ class BitGoIntegration(CustodyIntegration):
         if not response:
             raise BitGoAPIError("Error in BitGo send transaction")
 
-        return self._poll_stellar_transaction_information(txid=response["txid"])
+        stellar_transaction_id = bitgo.get_stellar_transaction_id(response["id"])
+        return self._poll_stellar_transaction_information(stellar_transaction_id)
 
-    def _poll_stellar_transaction_information(self, txid: str) -> dict:
+    def _poll_stellar_transaction_information(
+        self, stellar_transaction_id: str
+    ) -> dict:
         """
         Pooling the stellar network to get the transaction information.
         This method is used to retrieve the "envelope_xdr" and "paging_token"
         since BitGo doesn't return these values
 
-        :param txid: The Stellar Network transaction id.
+        :param stellar_transaction_id: The Stellar Network's transaction id.
         :returns: Returns the transaction's information.
         """
         try:
             return get_stellar_network_transaction_info(
-                txid, num_retries=self.num_retries
+                stellar_transaction_id, num_retries=self.num_retries
             )
         except NotFoundError:
             raise RuntimeError(
-                f"Error trying to retrieve transaction information. Transaction id: {txid}"
+                f"Error trying to retrieve transaction information. Transaction id: {stellar_transaction_id}"
             )
 
     @staticmethod

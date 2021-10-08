@@ -144,3 +144,19 @@ class BitGoAPI:
         response = self.session.post(url, json=data)
 
         return self._handle_response(response)
+
+    def get_transfer_by_id(self, transaction_id: str) -> dict:
+        """
+        Gets BitGo's transfer information by its id.
+
+        :param: The transfer id.
+        :return: Returns a dict containing the transfer data.
+        """
+        url = urljoin(
+            self.API_URL,
+            f"/api/v2/{self.COIN}/wallet/{self.WALLET_ID}/transfer/{transaction_id}",
+        )
+
+        response = self.session.get(url)
+
+        return self._handle_response(response)

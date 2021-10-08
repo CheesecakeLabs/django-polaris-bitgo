@@ -192,3 +192,88 @@ def send_transaction_response(
     response.json = send_transaction_data
 
     return response
+
+
+def get_transaction_by_id_data(*, transaction_id: str = "", wallet_id: str = ""):
+    return {
+        "entries": [
+            {
+                "address": "GBJZ2BSJ2JDWL766DN5ERPNFULOS3VL6T74Z6QGDHGOHVFHXJCNY53MC",
+                "value": 100000000,
+                "valueString": "100000000",
+                "isPayGo": False,
+            },
+            {
+                "address": "GCQIDFOGTGYPVJZ7OKJ6LNBZJ7AETW65CQIBBEAVC4B6QIDHE3VZEQBS",
+                "wallet": wallet_id,
+                "value": -100000100,
+                "valueString": "-100000100",
+                "isPayGo": False,
+            },
+        ],
+        "id": transaction_id,
+        "coin": "txlm",
+        "wallet": wallet_id,
+        "walletType": "hot",
+        "txid": "681b2e1e7a12bbfd4e64bc2ee27f6d353fdaf0cd7d4b8899377c26f8d5ed517b",
+        "height": 347931,
+        "heightId": "000347931-615da283c6d7cb000686dacbdfdca0ec",
+        "date": "2021-10-06T13:20:19.000Z",
+        "confirmations": 85,
+        "type": "send",
+        "value": -100000100,
+        "valueString": "-100000100",
+        "baseValue": -100000000,
+        "baseValueString": "-100000000",
+        "feeString": "100",
+        "payGoFee": 0,
+        "payGoFeeString": "0",
+        "usd": -3.1000031,
+        "usdRate": 0.31,
+        "state": "confirmed",
+        "instant": False,
+        "isReward": False,
+        "isFee": False,
+        "tags": [wallet_id],
+        "history": [
+            {
+                "date": "2021-10-06T13:20:19.000Z",
+                "action": "confirmed",
+                "comment": None,
+            },
+            {
+                "date": "2021-10-06T13:20:04.498Z",
+                "action": "signed",
+            },
+            {
+                "date": "2021-10-06T13:20:03.495Z",
+                "user": "user_id",
+                "action": "created",
+            },
+        ],
+        "signedDate": "2021-10-06T13:20:04.498Z",
+        "usersNotified": True,
+        "confirmedTime": "2021-10-06T13:20:19.000Z",
+        "signedTime": "2021-10-06T13:20:04.498Z",
+        "createdTime": "2021-10-06T13:20:03.495Z",
+        "label": "",
+    }
+
+
+def get_transaction_by_id_response(
+    *,
+    status_code: int = status.HTTP_201_CREATED,
+    reason: str = "",
+    url: str = "",
+    transaction_id: str = "",
+    wallet_id: str = "",
+):
+    response = requests.Response()
+    response.status_code = status_code
+    response.reason = reason
+    response.url = url
+    response.json = lambda: get_transaction_by_id_data(
+        transaction_id=transaction_id, wallet_id=wallet_id
+    )
+
+    return response
