@@ -1,4 +1,3 @@
-from time import sleep
 from decimal import Decimal
 from typing import Union
 
@@ -12,7 +11,6 @@ from stellar_sdk.operation import Operation
 
 from . import BitGo
 from .bitgo import Recipient
-from polaris_bitgo.helpers.exceptions import BitGoAPIError
 from polaris_bitgo.utils import get_stellar_network_transaction_info
 
 logger = get_logger(__name__)
@@ -117,12 +115,8 @@ class BitGoIntegration(CustodyIntegration):
         envelope = bitgo.build_transaction(recipient)
         signed_envelope = bitgo.sign_transaction(envelope)
 
-        response = bitgo.send_transaction(signed_envelope.to_xdr())
-
-        if not response:
-            raise BitGoAPIError("Error in BitGo send transaction")
-
-        stellar_transaction_id = bitgo.get_stellar_transaction_id(response["id"])
+        transfer_id = bitgo.send_transaction(signed_envelope.to_xdr())
+        stellar_transaction_id = bitgo.get_stellar_transaction_id(transfer_id)
         return self._poll_stellar_transaction_information(stellar_transaction_id)
 
     def submit_deposit_transaction(
@@ -152,12 +146,8 @@ class BitGoIntegration(CustodyIntegration):
         envelope = bitgo.build_transaction(recipient)
         signed_envelope = bitgo.sign_transaction(envelope)
 
-        response = bitgo.send_transaction(signed_envelope.to_xdr())
-
-        if not response:
-            raise BitGoAPIError("Error in BitGo send transaction")
-
-        stellar_transaction_id = bitgo.get_stellar_transaction_id(response["id"])
+        transfer_id = bitgo.send_transaction(signed_envelope.to_xdr())
+        stellar_transaction_id = bitgo.get_stellar_transaction_id(transfer_id)
         return self._poll_stellar_transaction_information(stellar_transaction_id)
 
     def _poll_stellar_transaction_information(
