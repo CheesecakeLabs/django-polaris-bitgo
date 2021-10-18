@@ -27,7 +27,7 @@ def test_bitgo_build_transaction(mocker, make_bitgo, make_recipient):
         "GB4S2NHN7DIQVDTZY3QIUNDFV5LZNOO6FS5PO2NOCQ3MBJCVUIBFTJH3"
     )
 
-    assert transaction_envelope.transaction.source.public_key == bitgo.wallet.public_key
+    assert transaction_envelope.transaction.source.account_id == bitgo.wallet.public_key
     assert (
         str(
             Operation.to_xdr_amount(
@@ -38,7 +38,7 @@ def test_bitgo_build_transaction(mocker, make_bitgo, make_recipient):
     )
     assert transaction_envelope.transaction.operations[0].asset.code == asset_code
     assert (
-        transaction_envelope.transaction.operations[0].destination
+        transaction_envelope.transaction.operations[0].destination.account_id
         == destination_account_public_key
     )
     assert transaction_envelope.transaction.operations[0].source is None

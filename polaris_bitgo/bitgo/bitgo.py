@@ -78,7 +78,7 @@ class BitGo:
 
         return transaction_envelope
 
-    def send_transaction(self, transaction_envelope_xdr: str) -> dict:
+    def send_transaction(self, transaction_envelope_xdr: str) -> str:
         """
         Sends the transaction's XDR to BitGo, which adds another
         signature to the transaction, then sends it to the
@@ -86,11 +86,10 @@ class BitGo:
 
         :param transaction_envelope_xdr: The base64 string with
         the transaction's information.
-        :return: Returns the BitGo's API response. It contains
-        some information about the transaction, like the Stellar
-        Network transaction id.
+        :return: Returns the BitGo transfer id.
         """
-        return self.bitgo_api.send_transaction(transaction_envelope_xdr)
+        response = self.bitgo_api.send_transaction(transaction_envelope_xdr)
+        return response["transfer"]["id"]
 
     def _decrypt_private_key(self) -> str:
         """

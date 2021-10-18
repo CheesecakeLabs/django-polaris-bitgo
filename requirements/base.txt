@@ -1,2 +1,2 @@
-django-polaris==1.4.1
+git+https://github.com/stellar/django-polaris.git@custodial-support
 pycryptodome==3.10.1

@@ -25,6 +25,12 @@ def pytest_configure(config):
             "django.contrib.staticfiles",
             "polaris",
         ),
+        DATABASES={
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": ":memory:",
+            },
+        },
     )
 
     # Polaris settings
@@ -88,6 +94,21 @@ def make_bitgo():
         )
 
     return _make_bitgo
+
+
+@pytest.fixture
+def make_bitgo_integration():
+    from django.conf import settings
+
+    from polaris_bitgo.bitgo.integration import BitGoIntegration
+
+    return BitGoIntegration(
+        api_url=settings.BITGO_API_URL,
+        api_key=settings.BITGO_API_KEY,
+        api_passphrase=settings.BITGO_API_PASSPHRASE,
+        wallet_id=settings.BITGO_WALLET_ID,
+        stellar_coin_code=settings.BITGO_STELLAR_COIN_CODE,
+    )
 
 
 @pytest.fixture
